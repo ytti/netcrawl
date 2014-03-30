@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+begin
+  require 'netcrawl/cli'
+  puts NetCrawl::CLI.new.run
+rescue => error
+  warn "#{error}"
+  raise if NetCrawl::CFG.debug
+end

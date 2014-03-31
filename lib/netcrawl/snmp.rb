@@ -39,6 +39,24 @@ class NetCrawl
       results
     end
 
+    # bulkwalks oid returning hash based on block block gets SNMP::VarBind and
+    # shold rturn either hash_value or [hash_value, hash_key]
+    # if block does not return hash_key, hash_key is oid-root, e.g. if root is
+    # 1.2 and oid is 1.2.3.4.5 then key is 3.4.5
+    # @param [String] oid root oid to walk
+    # @yield [SNMP::VarBind] gives vb to block, expect back hash_value or [hash_value, hash_key]
+    # @return [Hash] resulting hash
+    def walk2hash oid, &block
+      index = oid.split('.').size
+      hash  = {}
+      bulkwalk(oid).each do |vb|
+        value, key = block.call(vb)
+        key ||= vb.oid[index..-1]
+        hash[key] = value
+      end
+      hash
+    end
+
     private
 
     def initialize host, community=CFG.snmp.community, timeout=CFG.snmp.timeout, retries=CFG.snmp.retries

@@ -8,8 +8,8 @@ class NetCrawl
 
     def run
       output = NetCrawl.new.crawl @host
-      output.clean   if @opts[:purge]
-      output.resolve if @opts[:resolve]
+      output.clean!   if @opts[:purge]
+      output.resolve! if @opts[:resolve]
       if @opts[:graphviz]
         output.to_dot
       elsif @opts[:list]
@@ -36,12 +36,13 @@ class NetCrawl
       @host = DNS.getip args.shift
       CFG.snmp.community = @opts[:community] if @opts[:community]
       CFG.debug          = true if @opts[:debug]
+      CFG.ipname         = true if @opts[:ipname]
       raise MissingHost, 'no hostname given as argument' unless @host
     end
 
 
     def opt_parse
-      opts = Slop.parse(:help=>true) do
+      Slop.parse(:help=>true) do
         banner 'Usage: netcrawl [options] hostname'
         on 'g',  'graphviz',  'dot output use \'dot -Tpng -o map.png map.dot\''
         on 'l',  'list',      'list nodes'
@@ -52,6 +53,7 @@ class NetCrawl
         on 'p',  'purge',     'remove peers not in configured CIDR'
         on 'c=', 'community', 'SNMP community to use'
         on 'd',  'debug',     'turn debugging on'
+        on 'i',  'ipname',    'use rev(ip) name instead of discovered name'
       end
     end
 

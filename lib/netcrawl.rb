@@ -16,9 +16,9 @@ class NetCrawl
   def get host
     peers = []
     @methods.each do |method|
-      peers += method.send(:get, host)
+      peers += method.send(:peers, host)
     end
-    peers.uniq
+    peers.uniq { |peer| peer.ip }
   end
 
   # Given string of IP address, recurses through peers seen and populates @hosts hash
@@ -28,9 +28,9 @@ class NetCrawl
     peers = get host
     @hosts[host] = peers
     peers.each do |peer|
-      next if     @hosts.has_key? peer
-      next unless @poll.include?  peer
-      crawl peer
+      next if     @hosts.has_key? peer.ip
+      next unless @poll.include?  peer.ip
+      crawl peer.ip
     end
   end
 
@@ -46,7 +46,7 @@ class NetCrawl
         file = 'netcrawl/method/' + method.downcase
         require_relative file
         @methods.push NetCrawl.const_get(method)
-      rescue NameError, LoadError => error
+      rescue NameError, LoadError
         raise MethodNotFound, "unable to find method '#{method}'"
       end
     end
@@ -56,8 +56,7 @@ class NetCrawl
 end
 require_relative 'netcrawl/pollmap'
 require_relative 'netcrawl/namemap'
-require_relative 'netcrawl/pollmap'
-require_relative 'netcrawl/method/cdp'
-require_relative 'netcrawl/method/lldp'
+require_relative 'netcrawl/peer'
+require_relative 'netcrawl/method/xdp'
 require_relative 'netcrawl/dns'
 require_relative 'netcrawl/output'

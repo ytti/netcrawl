@@ -39,20 +39,16 @@ class NetCrawl
       results
     end
 
-    # bulkwalks oid returning hash based on block block gets SNMP::VarBind and
-    # shold rturn either hash_value or [hash_value, hash_key]
-    # if block does not return hash_key, hash_key is oid-root, e.g. if root is
-    # 1.2 and oid is 1.2.3.4.5 then key is 3.4.5
+    # bulkwalks oid and returns hash with oid as key
     # @param [String] oid root oid to walk
-    # @yield [SNMP::VarBind] gives vb to block, expect back hash_value or [hash_value, hash_key]
+    # @yield [VBHash] hash containing oids found
     # @return [Hash] resulting hash
-    def walk2hash oid, &block
-      index = oid.split('.').size
-      hash  = {}
+    def hashwalk oid, &block
+      hash  = VBHash.new
       bulkwalk(oid).each do |vb|
-        value, key = block.call(vb)
-        key ||= vb.oid[index..-1]
-        hash[key] = value
+        #value, key = block.call(vb)
+        key ||= vb.oid
+        hash[key] = vb
       end
       hash
     end
@@ -74,13 +70,72 @@ class NetCrawl
       raise NoResponse, msg
     end
 
+    # Hash with some helper methods to easier work with VarBinds
+    class VBHash < Hash
+      alias :org_bracket :[]
+      undef :[]
+
+      # @param [Array(Strin, Array)] oid root oid under which you want all oids below it
+      # @return [VBHash] oids which start with param oid
+      def by_oid *oid
+        oid = arg_to_oid(*oid)
+        hash = select do |key, value|
+          key[0..oid.size-1] == oid
+        end
+        newhash = VBHash.new
+        newhash.merge hash
+      end
+
+      # @param [Array(String, Array)] args partial match 3.4.6 would match to 1.2.3.4.6.7.8
+      # @return [SNMP::VarBind] matching element
+      def by_partial *args
+        oid = arg_to_oid(*args)
+        got = nil
+        keys.each do |key|
+          if key.each_cons(oid.size).find{|e|e==oid}
+            got = self[key]
+            break
+          end
+        end
+        got
+      end
+
+      # @param [Array[String, Array)] key which you want, multiple arguments compiled into single key
+      # @return [SNMP::VarBind] matching element
+      def [] *args
+        org_bracket arg_to_oid(*args)
+      end
+
+      private
+
+      def arg_to_oid *args
+        key = []
+        args.each do |arg|
+          if Array === arg
+            key += arg.map{|e|e.to_i}
+          elsif Fixnum === arg
+            key << arg
+          else
+            key += arg.split('.').map{|e|e.to_i}
+          end
+        end
+        key
+      end
+    end
   end
 end
 
 module SNMP
   class VarBind
+    # @return [String] VarBind value as IP address
     def as_ip
       SNMP::IpAddress.new(value).to_s
+    end
+    # @param [String] root oid which is removed from self.oid
+    # @return [Array] oid remaining after specified root oid
+    def oid_id root
+      root = root.split('.').map{|e|e.to_i}
+      oid[root.size..-1]
     end
   end
 end

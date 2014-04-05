@@ -1,64 +1,66 @@
 class NetCrawl
   class Output
-    attr_reader :iphash, :namehash, :hash
+    attr_reader :peers, :resolve
 
     # @return [String] pretty print of hash
     def to_hash
       require 'pp'
       out = ''
-      PP.pp @hash, out
+      PP.pp to_h, out
       out
     end
 
     # @return [String] yaml of hosts and peers found
     def to_yaml
       require 'yaml'
-      YAML.dump @hash
+      YAML.dump to_h
     end
 
     # @return [String] json of hosts and peers found
     def to_json
       require 'json'
-      JSON.pretty_generate @hash
+      JSON.pretty_generate to_h
     end
 
     # @return [Array] of nodes found
     def to_list
       nodes = []
-      @hash.each do |host, peers|
+      @peers.each do |host, peers|
         nodes << host
-        nodes << peers
+        peers.each do |peer|
+          nodes.push @resolve ? peer.name : peer.ip
+        end
       end
       nodes.flatten.uniq.sort
     end
 
-    # resolves ip addresses and changes @hash to point to the resolved hash
+    # resolves ip addresses of peers and @peers keys
     # @return [void]
-    def resolve
-      @namehash = {}
-      @iphash.each do |host, peers|
-        host = DNS.getname host
-        @namehash[host] = []
-        peers.each do |peer|
-          @namehash[host].push DNS.getname(peer)
-        end
+    def resolve!
+      @resolve = true
+      newpeers = {}
+      @peers.each do |host, peers|
+        peers.each { |peer| peer.name }
+        name = DNS.getname host
+        newpeers[name] = peers
       end
-      @hash = @namehash
+      @peers = newpeers
     end
 
-    # remove peers not matchin configured CIDR
-    def clean
-      @hash.each do |host, peers|
-        peers = peers.delete_if{|peer|not @pollmap.include? peer}
+    # remove peers not matching to configured CIDR
+    # @return [void]
+    def clean!
+      @peers.each do |host, peers|
+        peers.delete_if{|peer|not @pollmap.include? peer.ip}
       end
     end
 
     private
 
-    def initialize hash, pollmap
-      @iphash  = hash
-      @hash    = @iphash
+    def initialize peers, pollmap
+      @peers   = peers
       @pollmap = pollmap
+      @resolve = false
     end
 
     def method_missing name, *args
@@ -67,6 +69,18 @@ class NetCrawl
       require_relative 'output/' + output
       output = NetCrawl::Output.const_get output.capitalize
       output.send :output, self
+    end
+
+    def to_h
+      hash = {}
+      @peers.each do |host, peers|
+        ary = []
+        peers.each do |peer|
+          ary << peer.to_hash
+        end
+        hash[host] = ary
+      end
+      hash
     end
   end
 end

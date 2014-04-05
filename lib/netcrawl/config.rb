@@ -13,6 +13,7 @@ class NetCrawl
   Config.default.snmp.retries    = 2
   Config.default.snmp.bulkrows   = 35    # 1500B packet should fit about 50 :cdpCacheAddress rows
   Config.default.dot.bothlinks   = false # keep both a-b and b-a links
+  Config.default.dot.linklabels  = true  # label link with interface names
   Config.default.dot.color       = [     # regexp of host => color
     [ 'cpe', 'gold'   ],
     [ '-sw', 'blue'   ],

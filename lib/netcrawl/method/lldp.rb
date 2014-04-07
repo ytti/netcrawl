@@ -36,7 +36,7 @@ class NetCrawl
         peer.oid      = get_oid_hash peer_id
         ip            = @mib.by_partial OID[:lldpRemManAddrIfSubtype], peer_id
         peer.raw_ip   = ip.oid[-4..-1].join('.') if ip # FIXME: IPv4 specific 
-        peer.raw_ip ||= 192.0.2.255  # sometimes we can't fnd any IP (EX2200 talking Arista found)
+        peer.raw_ip ||= '192.0.2.255'  # sometimes we can't fnd any IP (EX2200 talking Arista found)
         peer.raw_name = @mib[OID[:lldpRemSysName], peer_id].value
         peer.ip       = get_ip peer.raw_ip, peer.raw_name
         peer.dst      = @mib[OID[:lldpRemPortId], peer_id].value

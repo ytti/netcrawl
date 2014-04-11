@@ -1,5 +1,6 @@
 class NetCrawl
   class CDP < XDP
+    require 'pry'
     MIB = '1.3.6.1.4.1.9.9.23'  # ciscoCdpMIB
     OID = {
       # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?local=en&translate=Translate&objectInput=1.3.6.1.4.1.9.9.23.1.2.1.1
@@ -22,7 +23,8 @@ class NetCrawl
         peer.raw_name = @mib[OID[:cdpCacheDeviceId], peer_id].value
         peer.ip       = get_ip peer.raw_ip, peer.raw_name
         peer.dst      = @mib[OID[:cdpCacheDevicePort], peer_id].value
-        peer.src      = @mib[OID[:cdpInterfaceName], peer_id.first].value
+        peer.src      = @mib[OID[:cdpInterfaceName], peer_id.first]
+        peer.src      = peer.src.value if peer.src
         peer.raw_ip   = @mib[OID[:cdpCacheAddress], peer_id].value
         peers << peer
       end

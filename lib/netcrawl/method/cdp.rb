@@ -1,6 +1,5 @@
 class NetCrawl
   class CDP < XDP
-    require 'pry'
     MIB = '1.3.6.1.4.1.9.9.23'  # ciscoCdpMIB
     OID = {
       # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?local=en&translate=Translate&objectInput=1.3.6.1.4.1.9.9.23.1.2.1.1

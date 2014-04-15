@@ -26,11 +26,7 @@ class NetCrawl
     private
 
     def initialize
-      if Config.system.empty? and Config.user.empty?
-        Config.user = Config.default
-        Config.save :user
-        raise NoConfig, 'edit ~/.config/netcrawl/config'
-      end
+      raise NoConfig, 'edit ~/.config/netcrawl/config'if Config.create
       @opts = opt_parse
       args  = @opts.parse
       @host = DNS.getip args.shift

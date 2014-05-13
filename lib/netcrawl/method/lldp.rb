@@ -43,7 +43,7 @@ class NetCrawl
         if @mib[OID[:lldpRemPortIdSubtype], peer_id].value.to_i == PortSubType[:mac_address]
           peer.dst    = peer.dst.each_char.map{|e|"%02x" % e.ord}.join.scan(/..../).join('.')
         end
-        peer.src      = @mib[OID[:lldpLocPortId], peer_id[1]].value
+        peer.src      = @mib[OID[:lldpLocPortId], peer_id[1]].value rescue nil
         peers << peer
       end
       peers
